@@ -55,7 +55,7 @@ function Invoke-WinGet {
             $line = [string]$_
             $line = $line -replace '\x1B\[[0-?]*[ -/]*[@-~]', ''
             $output.Add($line)
-            Write-RunMessage $LogPath $line
+            Write-RunMessage $LogPath $line -LogOnly
         }
         if ($null -eq $global:LASTEXITCODE) { throw 'WinGet did not return an exit code.' }
         $exitCode = [int]$global:LASTEXITCODE
@@ -87,6 +87,7 @@ function Invoke-AppInstall {
 
         $arguments = @('install', '--id', $App.Id, '--exact', '--source', 'winget', '--silent', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
         if ($App.Version) { $arguments += @('--version', $App.Version, '--architecture', 'x64') }
+        if ($App.PSObject.Properties['Location'] -and $App.Location) { $arguments += @('--location', $App.Location) }
         Write-RunMessage $LogPath ('Installing ' + $App.Name + '...')
         $installation = Invoke-WinGet $WingetPath $arguments $LogPath
         switch ($installation.Code) {
@@ -98,7 +99,7 @@ function Invoke-AppInstall {
         }
     }
     catch { $result.Detail = $_.Exception.Message }
-    Write-RunMessage $LogPath ('{0}: {1}. {2}' -f $result.Name, $result.Status, $result.Detail)
+        Write-RunMessage $LogPath ('{0}: {1}. {2}' -f $result.Name, $result.Status, $result.Detail) -LogOnly
     return $result
 }
 
@@ -131,7 +132,12 @@ function Invoke-InstallSession {
     $pending = @($Apps)
     while ($pending.Count -gt 0) {
         foreach ($app in $pending) {
+            $number = [array]::IndexOf($pending, $app) + 1
+            Write-Host ('[{0}/{1}] {2}' -f $number, $pending.Count, $app.Name) -ForegroundColor Cyan
             $results[$app.Id] = Invoke-AppInstall $app $WingetPath $LogPath
+            $status = $results[$app.Id].Status
+            $color = switch ($status) { 'Installed' { 'Green' }; 'Skipped' { 'Yellow' }; default { 'Red' } }
+            Write-Host ('  ' + $status) -ForegroundColor $color
         }
         $orderedResults = @($Apps | ForEach-Object { $results[$_.Id] })
         Write-InstallSummary $orderedResults $LogPath

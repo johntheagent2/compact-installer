@@ -10,19 +10,31 @@ try {
     Import-Module (Join-Path $PSScriptRoot 'src\Installer.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'src\Console.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'src\Prerequisites.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'src\Destination.psm1') -Force
     $logPath = New-RunLog $PSScriptRoot
     Assert-SupportedWindows
     if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected) {
         throw 'Open install.cmd in an interactive Windows terminal; redirected input/output is not supported.'
     }
-    $selection = @(Read-AppSelection -Catalog @(Get-AppCatalog))
+    $catalog = @(Get-AppCatalog)
+    $selection = @()
+    $notice = ''
+    while ($true) {
+        $disk = Read-DestinationDisk -Notice $notice
+        if (-not $disk) { break }
+        Set-AppDestination -Apps $catalog -Disk $disk
+        $selection = @(Read-AppSelection -Catalog $catalog -Disk $disk)
+        if ($selection.Count -eq 0) { continue }
+        $wingetPath = Initialize-WinGet $logPath
+        try { Test-AppDestinations -Apps $selection -Disk $disk -WingetPath $wingetPath -LogPath $logPath; break }
+        catch { $notice = $_.Exception.Message; $selection = @() }
+    }
     if ($selection.Count -eq 0) {
         Write-RunMessage $logPath 'Cancelled. No installations were requested.'
         Write-RunMessage $logPath ('Log: ' + $logPath)
     }
     else {
         Write-RunMessage $logPath ('Selected apps: ' + (($selection | ForEach-Object Name) -join ', '))
-        $wingetPath = Initialize-WinGet $logPath
         $results = @(Invoke-InstallSession -Apps $selection -WingetPath $wingetPath -LogPath $logPath -RetryPrompt {
             param($failedApps)
             Read-RetryChoice -FailedApps $failedApps

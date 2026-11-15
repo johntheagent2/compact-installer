@@ -6,8 +6,8 @@ Reinstall your essential apps after a fresh Windows installation. Select the app
 
 1. Extract the complete installer ZIP into a writable folder, such as Downloads or a USB drive. Keep `install.cmd`, `Install.ps1`, and `src` together.
 2. Double-click **install.cmd**.
-3. Use **Up/Down** to move, **Space** to toggle an app, **A** to select all, or **D** to deselect all.
-4. Press **Enter** to review, then **Y** to install. Any other key returns to selection; **Esc** cancels.
+3. Choose a local fixed disk (letter, label, and free space are shown). C: uses app default directories; other disks use `Apps\<app name>`. Discord and PowerToys always use their app defaults. Then use **Up/Down** to move, **Space** to toggle an app, **A** to select all, or **D** to deselect all.
+4. Press **Enter** to review each planned destination, then **Y** to install. Any other key returns to selection; **Esc** returns to disk selection, where **Esc** cancels.
 5. Approve Windows permission prompts when needed. Check the summary and optionally retry failed apps.
 
 Requires Windows 11 on an Intel/AMD 64-bit PC and working internet. Uses the Windows PowerShell included with Windows; no Node.js or Python installation is needed. Launch normally in your own account; individual app installers request elevation when required.
@@ -25,6 +25,8 @@ Requires Windows 11 on an Intel/AMD 64-bit PC and working internet. Uses the Win
 Every run starts with these defaults. Selections are not saved. The tool does not configure apps, restore settings, sign into accounts, or set up startup entries.
 
 Existing apps detected by WinGet are skipped, with `--no-upgrade` also used during installation. Apps that were manually extracted as portable files may not be detectable by WinGet. A failed detection query is treated as an error rather than a reason to reinstall an app.
+
+Disk selection applies to new app installations, not moving existing apps, app data, caches, dependencies, or Steam game libraries. Removable USB sticks and network drives are excluded. If the chosen destination is unavailable or its parent cannot be written, the tool returns to disk selection. Custom paths depend on each vendor installer honoring WinGet's location option. The terminal displays compact installation counts and colored statuses; detailed command output remains in the log.
 
 ## Results and logs
 

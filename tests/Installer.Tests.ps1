@@ -67,6 +67,13 @@ Describe 'Installing an app selection' {
         (Get-Content $env:COMPACT_TEST_CALLS -Raw) | Should Not Match 'install --id'
     }
 
+    It 'passes the chosen app destination as one argument to the installer' {
+        $catalog[2] | Add-Member NoteProperty Location 'D:\Apps\Notepad++'
+        $results = @(Invoke-InstallSession -Apps @($catalog[2]) -WingetPath $fakeWinget -LogPath $log -RetryPrompt { $false })
+        $results[0].Status | Should Be 'Installed'
+        (Get-Content $env:COMPACT_TEST_CALLS -Raw) | Should Match '--location D:\\Apps\\Notepad\+\+'
+    }
+
     It 'uses the compatible x64 UniKey build' {
         $results = @(Invoke-InstallSession -Apps @($catalog[3]) -WingetPath $fakeWinget -LogPath $log -RetryPrompt { $false })
         $results[0].Status | Should Be 'Installed'

@@ -1,24 +1,71 @@
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
 
+function Write-TerminalLine {
+    param([string]$Text = '', [string]$Color = 'Gray')
+    $width = [math]::Max(20, [Console]::WindowWidth - 1)
+    while ($Text.Length -gt $width) {
+        Write-Host $Text.Substring(0, $width) -ForegroundColor $Color
+        $Text = $Text.Substring($width)
+    }
+    Write-Host $Text -ForegroundColor $Color
+}
+
+function Write-ScreenHeader {
+    param([string]$Step)
+    Clear-Host
+    Write-TerminalLine ' COMPACT INSTALLER' Cyan
+    Write-TerminalLine (' ' + $Step) White
+    Write-TerminalLine ('-' * [math]::Min(72, [math]::Max(20, [Console]::WindowWidth - 1))) DarkGray
+}
+
+function Read-DestinationDisk {
+    param([string]$Notice = '')
+    $disks = @(Get-DestinationDisks)
+    if ($disks.Count -eq 0) { throw 'No local fixed disks with drive letters are available.' }
+    $position = 0
+    for ($i = 0; $i -lt $disks.Count; $i++) { if ($disks[$i].Root -eq 'C:\') { $position = $i } }
+    while ($true) {
+        Write-ScreenHeader 'STEP 1 / 3   Choose installation disk'
+        if ($Notice) { Write-TerminalLine $Notice Yellow }
+        for ($i = 0; $i -lt $disks.Count; $i++) {
+            $disk = $disks[$i]
+            $cursor = if ($i -eq $position) { '>' } else { ' ' }
+            $color = if ($i -eq $position) { 'Cyan' } else { 'Gray' }
+            $target = if ($disk.Root -eq 'C:\') { 'App defaults' } else { $disk.Root + 'Apps' }
+            Write-TerminalLine ('{0} {1} {2} | {3} GB free | {4}' -f $cursor, $disk.Root, $disk.Label, $disk.FreeGB, $target) $color
+        }
+        Write-TerminalLine ''
+        Write-TerminalLine 'Up/Down Move | Enter Choose | Esc Cancel'
+        switch ([Console]::ReadKey($true).Key) {
+            'UpArrow' { $position = ($position + $disks.Count - 1) % $disks.Count }
+            'DownArrow' { $position = ($position + 1) % $disks.Count }
+            'Enter' { return $disks[$position].Root }
+            'Escape' { return }
+        }
+    }
+}
+
 function Read-AppSelection {
-    param([Parameter(Mandatory)][object[]]$Catalog)
+    param([Parameter(Mandatory)][object[]]$Catalog, [string]$Disk = 'C:\')
+    $descriptions = @('Gaming', 'Chat', 'Text editor', 'Vietnamese keyboard', 'File archives', 'File search', 'Media player', 'Windows utilities')
     $position = 0
     $notice = ''
     while ($true) {
-        Clear-Host
-        Write-Host 'COMPACT INSTALLER' -ForegroundColor Cyan
-        Write-Host 'Choose your apps'
+        Write-ScreenHeader 'STEP 2 / 3   Choose your apps'
+        Write-TerminalLine ('Disk: {0} | Selected: {1}' -f $Disk, @($Catalog | Where-Object Selected).Count) Cyan
         Write-Host ''
         for ($index = 0; $index -lt $Catalog.Count; $index++) {
             $cursor = if ($index -eq $position) { '>' } else { ' ' }
             $mark = if ($Catalog[$index].Selected) { 'x' } else { ' ' }
             $color = if ($index -eq $position) { 'Cyan' } else { 'Gray' }
-            Write-Host ('{0} [{1}] {2}' -f $cursor, $mark, $Catalog[$index].Name) -ForegroundColor $color
+            Write-TerminalLine ('{0} [{1}] {2,-12} {3}' -f $cursor, $mark, $Catalog[$index].Name, $descriptions[$index]) $color
+            $target = if ($Catalog[$index].Location) { $Catalog[$index].Location } else { 'App default location' }
+            Write-TerminalLine ('      ' + $target) DarkGray
         }
         Write-Host ''
         Write-Host 'Up/Down: move | Space: toggle | A: select all | D: deselect all'
-        Write-Host 'Enter: review | Esc: cancel'
+        Write-Host 'Enter: review | Esc: back to disks'
         if ($notice) { Write-Host $notice -ForegroundColor Yellow }
         $key = [Console]::ReadKey($true)
         $notice = ''
@@ -35,15 +82,17 @@ function Read-AppSelection {
                     $notice = 'Select at least one app, or press Esc to cancel.'
                     continue
                 }
-                Clear-Host
-                Write-Host 'Ready to install' -ForegroundColor Cyan
-                foreach ($app in $selected) { Write-Host ('  - ' + $app.Name) }
+                Write-ScreenHeader 'STEP 3 / 3   Review installation'
+                foreach ($app in $selected) {
+                    $target = if ($app.Location) { $app.Location } else { 'App default location' }
+                    Write-TerminalLine ('  {0}: {1}' -f $app.Name, $target) White
+                }
                 Write-Host ''
                 Write-Host 'Existing apps will be skipped. Windows may ask for permission.'
                 Write-Host 'Continuing accepts the selected app licenses and WinGet source terms.'
                 Write-Host 'WinGet will be prepared automatically if needed.'
                 Write-Host ''
-                Write-Host 'Y: install | Esc: cancel | Any other key: change selection'
+                Write-Host 'Y: install | Esc: back to disks | Any other key: change selection'
                 $confirmation = [Console]::ReadKey($true)
                 if ($confirmation.Key -eq 'Y') { return $selected }
                 if ($confirmation.Key -eq 'Escape') { return }
@@ -59,4 +108,4 @@ function Read-RetryChoice {
     return ([Console]::ReadKey($true).Key -eq 'Y')
 }
 
-Export-ModuleMember -Function Read-AppSelection, Read-RetryChoice
+Export-ModuleMember -Function Read-AppSelection, Read-RetryChoice, Read-DestinationDisk
