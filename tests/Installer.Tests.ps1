@@ -68,7 +68,7 @@ Describe 'Installing an app selection' {
     }
 
     It 'passes the chosen app destination as one argument to the installer' {
-        $catalog[2] | Add-Member NoteProperty Location 'D:\Apps\Notepad++'
+        $catalog[2].Location = 'D:\Apps\Notepad++'
         $results = @(Invoke-InstallSession -Apps @($catalog[2]) -WingetPath $fakeWinget -LogPath $log -RetryPrompt { $false })
         $results[0].Status | Should Be 'Installed'
         (Get-Content $env:COMPACT_TEST_CALLS -Raw) | Should Match '--location D:\\Apps\\Notepad\+\+'

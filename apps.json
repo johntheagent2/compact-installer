@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "apps": [
+    { "name": "Steam", "id": "Valve.Steam", "description": "Gaming", "selectedByDefault": true, "supportsCustomLocation": true },
+    { "name": "Discord", "id": "Discord.Discord", "description": "Chat", "selectedByDefault": true, "supportsCustomLocation": false },
+    { "name": "Notepad++", "id": "Notepad++.Notepad++", "description": "Text editor", "selectedByDefault": true, "supportsCustomLocation": true },
+    { "name": "UniKey", "id": "UniKey.UniKey", "description": "Vietnamese keyboard", "selectedByDefault": true, "supportsCustomLocation": true, "version": "4.6.230919", "architecture": "x64", "notes": "Newer build 4.6.250531 is ARM64-only." },
+    { "name": "7-Zip", "id": "7zip.7zip", "description": "File archives", "selectedByDefault": true, "supportsCustomLocation": true },
+    { "name": "Everything", "id": "voidtools.Everything", "description": "File search", "selectedByDefault": false, "supportsCustomLocation": true },
+    { "name": "VLC", "id": "VideoLAN.VLC", "description": "Media player", "selectedByDefault": false, "supportsCustomLocation": true },
+    { "name": "PowerToys", "id": "Microsoft.PowerToys", "description": "Windows utilities", "selectedByDefault": false, "supportsCustomLocation": false }
+  ]
+}

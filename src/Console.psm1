@@ -48,7 +48,6 @@ function Read-DestinationDisk {
 
 function Read-AppSelection {
     param([Parameter(Mandatory)][object[]]$Catalog, [string]$Disk = 'C:\')
-    $descriptions = @('Gaming', 'Chat', 'Text editor', 'Vietnamese keyboard', 'File archives', 'File search', 'Media player', 'Windows utilities')
     $position = 0
     $notice = ''
     while ($true) {
@@ -59,7 +58,7 @@ function Read-AppSelection {
             $cursor = if ($index -eq $position) { '>' } else { ' ' }
             $mark = if ($Catalog[$index].Selected) { 'x' } else { ' ' }
             $color = if ($index -eq $position) { 'Cyan' } else { 'Gray' }
-            Write-TerminalLine ('{0} [{1}] {2,-12} {3}' -f $cursor, $mark, $Catalog[$index].Name, $descriptions[$index]) $color
+            Write-TerminalLine ('{0} [{1}] {2,-12} {3}' -f $cursor, $mark, $Catalog[$index].Name, $Catalog[$index].Description) $color
             $target = if ($Catalog[$index].Location) { $Catalog[$index].Location } else { 'App default location' }
             Write-TerminalLine ('      ' + $target) DarkGray
         }
@@ -90,11 +89,11 @@ function Read-AppSelection {
                 Write-Host ''
                 Write-Host 'Existing apps will be skipped. Windows may ask for permission.'
                 Write-Host 'Continuing accepts the selected app licenses and WinGet source terms.'
-                Write-Host 'WinGet will be prepared automatically if needed.'
+                Write-Host 'Dry run checks packages without running app installers.'
                 Write-Host ''
-                Write-Host 'Y: install | Esc: back to disks | Any other key: change selection'
+                Write-Host '> Dry run: Enter or D | Esc: back to disks | Other: change selection'
                 $confirmation = [Console]::ReadKey($true)
-                if ($confirmation.Key -eq 'Y') { return $selected }
+                if ($confirmation.Key -in @('Enter', 'D')) { return $selected }
                 if ($confirmation.Key -eq 'Escape') { return }
             }
         }

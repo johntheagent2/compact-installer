@@ -15,6 +15,11 @@ public static class FakeWinGet
         if (args[0] == "--version") { Console.WriteLine("v1.29.380"); return 0; }
         int index = Array.IndexOf(args, "--id");
         string id = args[index + 1];
+        if (args[0] == "show")
+        {
+            if (scenario == "missing-package") { Console.Error.WriteLine("Package unavailable"); return unchecked((int)0x8A150014); }
+            Console.WriteLine("Verified package installer"); return 0;
+        }
         if (args[0] == "list")
         {
             if (scenario == "list-error")

@@ -11,6 +11,7 @@ try {
     Import-Module (Join-Path $PSScriptRoot 'src\Console.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'src\Prerequisites.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'src\Destination.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'src\DryRun.psm1') -Force
     $logPath = New-RunLog $PSScriptRoot
     Assert-SupportedWindows
     if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected) {
@@ -25,7 +26,23 @@ try {
         Set-AppDestination -Apps $catalog -Disk $disk
         $selection = @(Read-AppSelection -Catalog $catalog -Disk $disk)
         if ($selection.Count -eq 0) { continue }
-        $wingetPath = Initialize-WinGet $logPath
+        $wingetPath = Find-WorkingWinGet $logPath
+        if (-not $wingetPath) {
+            Write-RunMessage $logPath 'Prerequisite missing: working WinGet 1.9 or newer is required.'
+            Write-Host 'P: Prepare WinGet and retry | Any other key: change selection'
+            if ([Console]::ReadKey($true).Key -ne 'P') { $selection = @(); continue }
+            $wingetPath = Initialize-WinGet $logPath
+        }
+        $verified = Invoke-InstallationDryRun -Apps $selection -Disk $disk -WingetPath $wingetPath -LogPath $logPath
+        if (-not $verified) {
+            Write-Host 'Verification failed. Installation blocked. Press a key to change selection.' -ForegroundColor Red
+            [void][Console]::ReadKey($true)
+            $selection = @(); continue
+        }
+        Write-Host 'Dry run passed. I: Install | C: Change selection | Any other key: Exit' -ForegroundColor Green
+        $action = [Console]::ReadKey($true).Key
+        if ($action -eq 'C') { $selection = @(); continue }
+        if ($action -ne 'I') { $selection = @(); break }
         try { Test-AppDestinations -Apps $selection -Disk $disk -WingetPath $wingetPath -LogPath $logPath; break }
         catch { $notice = $_.Exception.Message; $selection = @() }
     }

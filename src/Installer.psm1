@@ -1,20 +1,11 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 Set-StrictMode -Version Latest
 
 function Get-AppCatalog {
-    @(
-        [pscustomobject]@{ Name = 'Steam'; Id = 'Valve.Steam'; Selected = $true; Version = $null }
-        [pscustomobject]@{ Name = 'Discord'; Id = 'Discord.Discord'; Selected = $true; Version = $null }
-        [pscustomobject]@{ Name = 'Notepad++'; Id = 'Notepad++.Notepad++'; Selected = $true; Version = $null }
-        # The newer 4.6.250531 build is ARM64-only. This is the official x64 build.
-        [pscustomobject]@{ Name = 'UniKey'; Id = 'UniKey.UniKey'; Selected = $true; Version = '4.6.230919' }
-        [pscustomobject]@{ Name = '7-Zip'; Id = '7zip.7zip'; Selected = $true; Version = $null }
-        [pscustomobject]@{ Name = 'Everything'; Id = 'voidtools.Everything'; Selected = $false; Version = $null }
-        [pscustomobject]@{ Name = 'VLC'; Id = 'VideoLAN.VLC'; Selected = $false; Version = $null }
-        [pscustomobject]@{ Name = 'PowerToys'; Id = 'Microsoft.PowerToys'; Selected = $false; Version = $null }
-    )
+    param([string]$Path = (Join-Path (Split-Path $PSScriptRoot -Parent) 'apps.json'))
+    Import-Module (Join-Path $PSScriptRoot 'Catalog.psm1') -Force
+    Read-AppCatalog -Path $Path
 }
-
 function New-RunLog {
     param([Parameter(Mandatory)][string]$Root)
     $directory = Join-Path $Root 'logs'
@@ -86,7 +77,8 @@ function Invoke-AppInstall {
         }
 
         $arguments = @('install', '--id', $App.Id, '--exact', '--source', 'winget', '--silent', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
-        if ($App.Version) { $arguments += @('--version', $App.Version, '--architecture', 'x64') }
+        if ($App.Version) { $arguments += @('--version', $App.Version) }
+        if ($App.Architecture) { $arguments += @('--architecture', $App.Architecture) }
         if ($App.PSObject.Properties['Location'] -and $App.Location) { $arguments += @('--location', $App.Location) }
         Write-RunMessage $LogPath ('Installing ' + $App.Name + '...')
         $installation = Invoke-WinGet $WingetPath $arguments $LogPath

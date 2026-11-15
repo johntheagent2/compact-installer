@@ -12,7 +12,7 @@ function Set-AppDestination {
     param([object[]]$Apps, [ValidatePattern('^[A-Za-z]:\\$')][string]$Disk)
     foreach ($app in $Apps) {
         $location = $null
-        if ($Disk -ne 'C:\' -and $app.Id -notin @('Discord.Discord', 'Microsoft.PowerToys')) {
+        if ($Disk -ne 'C:\' -and $app.SupportsCustomLocation) {
             $location = $Disk + 'Apps\' + $app.Name
         }
         $app | Add-Member NoteProperty Location $location -Force

@@ -64,4 +64,4 @@ function Initialize-WinGet {
     return $path
 }
 
-Export-ModuleMember -Function Assert-SupportedWindows, Initialize-WinGet
+Export-ModuleMember -Function Assert-SupportedWindows, Initialize-WinGet, Find-WorkingWinGet

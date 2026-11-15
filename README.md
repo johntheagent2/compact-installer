@@ -1,4 +1,4 @@
-# Compact Installer
+﻿# Compact Installer
 
 Reinstall your essential apps after a fresh Windows installation. Select the apps, confirm, and let WinGet install them.
 
@@ -7,7 +7,7 @@ Reinstall your essential apps after a fresh Windows installation. Select the app
 1. Extract the complete installer ZIP into a writable folder, such as Downloads or a USB drive. Keep `install.cmd`, `Install.ps1`, and `src` together.
 2. Double-click **install.cmd**.
 3. Choose a local fixed disk (letter, label, and free space are shown). C: uses app default directories; other disks use `Apps\<app name>`. Discord and PowerToys always use their app defaults. Then use **Up/Down** to move, **Space** to toggle an app, **A** to select all, or **D** to deselect all.
-4. Press **Enter** to review each planned destination, then **Y** to install. Any other key returns to selection; **Esc** returns to disk selection, where **Esc** cancels.
+4. Press **Enter** to review each planned destination, then **Enter** to dry run. After verification passes, press **I** to install, **C** to change selection, or another key to exit. Any other key returns to selection; **Esc** returns to disk selection, where **Esc** cancels.
 5. Approve Windows permission prompts when needed. Check the summary and optionally retry failed apps.
 
 Requires Windows 11 on an Intel/AMD 64-bit PC and working internet. Uses the Windows PowerShell included with Windows; no Node.js or Python installation is needed. Launch normally in your own account; individual app installers request elevation when required.
@@ -38,7 +38,7 @@ The tool does not request an automatic restart. When WinGet reports that a resta
 
 ## WinGet preparation
 
-After you confirm the app selection, the installer checks for WinGet 1.9 or newer. If unavailable, it attempts App Installer registration, then Microsoft's documented repair route using `Microsoft.WinGet.Client` from PowerShell Gallery in current-user scope. This can also install the NuGet package provider. Failed setup stops the run and gives a recovery message. The main installer stays in your account's context.
+After you confirm the app selection, the installer checks for WinGet 1.9 or newer. If unavailable and you explicitly choose **P: Prepare WinGet and retry**, it attempts App Installer registration, then Microsoft's documented repair route using `Microsoft.WinGet.Client` from PowerShell Gallery in current-user scope. This can also install the NuGet package provider. Failed setup stops the run and gives a recovery message. The main installer stays in your account's context.
 
 Confirming installation accepts the selected packages' license agreements and the WinGet source terms. Downloads come through the `winget` source; hash verification stays enabled. `install.cmd` applies PowerShell's execution-policy bypass only to its child process, without changing the machine's saved execution policy.
 
@@ -63,3 +63,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\Build.ps1
 ```
 
 Output: `dist/compact-installer.zip`. No logs, tests, Git files, or saved selections are included.
+
+## JSON catalog and dry run
+Edit apps.json beside install.cmd. schemaVersion is 1; apps is an ordered nonempty array. Required fields: name (a valid Windows folder name), id (WinGet package ID), description, selectedByDefault (boolean), supportsCustomLocation (boolean). Optional version, architecture (x64/x86/neutral), and notes may be omitted or null. Omit version for the current compatible release. Duplicate IDs/names and invalid fields stop execution. Changes load on the next run; selections are never saved.
+Dry run checks package versions/architectures, installed apps, disk availability, and existing paths; logs planned commands; and blocks installation if verification fails. It creates no app folders or write-test files. It writes a diagnostic log, and WinGet queries may update source caches and their own logs. Destination write checks happen before installation. Real vendor behavior still requires actual install validation.
