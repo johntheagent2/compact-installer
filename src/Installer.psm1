@@ -28,10 +28,11 @@ function New-RunLog {
 function Write-RunMessage {
     param(
         [Parameter(Mandatory)][string]$LogPath,
-        [Parameter(Mandatory)][AllowEmptyString()][string]$Message
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Message,
+        [switch]$LogOnly
     )
     Add-Content -LiteralPath $LogPath -Value ('[{0}] {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message) -Encoding UTF8 -ErrorAction Stop
-    Write-Host $Message
+    if (-not $LogOnly) { Write-Host $Message }
 }
 
 function Invoke-WinGet {
@@ -40,7 +41,7 @@ function Invoke-WinGet {
         [Parameter(Mandatory)][string[]]$Arguments,
         [Parameter(Mandatory)][string]$LogPath
     )
-    Write-RunMessage $LogPath ('winget ' + ($Arguments -join ' '))
+    Write-RunMessage $LogPath ('winget ' + ($Arguments -join ' ')) -LogOnly
     $output = New-Object 'System.Collections.Generic.List[string]'
     # Windows PowerShell treats native stderr as ErrorRecords. Preserve it without
     # mistaking stderr output for a failed process; the exit code is authoritative.
@@ -65,7 +66,7 @@ function Invoke-WinGet {
     }
     # WinGet HRESULTs arrive as signed integers in Windows PowerShell.
     $code = '0x{0:X8}' -f ([long]$exitCode -band 4294967295L)
-    Write-RunMessage $LogPath ('Exit code: ' + $code)
+    Write-RunMessage $LogPath ('Exit code: ' + $code) -LogOnly
     [pscustomobject]@{ Code = $code; Output = ($output -join [Environment]::NewLine) }
 }
 
