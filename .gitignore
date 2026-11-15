@@ -1,0 +1,4 @@
+logs/
+.scratch/
+dist/
+TestResults.xml
